@@ -13,7 +13,7 @@ import { formatCurrency, formatDateTime } from '@/lib/formatters'
 
 function MetricCard({ label, value, description }: { label: string; value: string; description: string }) {
   return (
-    <Card className="border-border/70 bg-card/90">
+    <Card className="h-full border-border/70 bg-card/90">
       <CardHeader>
         <CardDescription>{label}</CardDescription>
         <CardTitle className="text-3xl">{value}</CardTitle>
@@ -35,9 +35,9 @@ export function DashboardPage() {
     return (
       <div className="space-y-8">
         <PageHeader eyebrow="Operator" title="Dashboard" description="Revenue and readiness across your supply." />
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-12">
           {Array.from({ length: 4 }).map((_, index) => (
-            <Skeleton key={index} className="h-36 rounded-2xl" />
+            <Skeleton key={index} className="h-36 rounded-2xl xl:col-span-3" />
           ))}
         </div>
         <Skeleton className="h-96 rounded-3xl" />
@@ -85,31 +85,39 @@ export function DashboardPage() {
         }
       />
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <MetricCard
-          label="Current hourly revenue"
-          value={formatCurrency(dashboard.revenue.currentHourlyRevenueUsd)}
-          description="Run-rate from active earning instances."
-        />
-        <MetricCard
-          label="Idle hourly opportunity"
-          value={formatCurrency(dashboard.revenue.idleHourlyOpportunityUsd)}
-          description="Visible capacity that could be earning right now."
-        />
-        <MetricCard
-          label="Online earning capacity"
-          value={String(dashboard.revenue.onlineCapacityCount)}
-          description="Mapped instances currently online."
-        />
-        <MetricCard
-          label="Attention queue"
-          value={String(dashboard.revenue.attentionCount)}
-          description="Instances blocked from earning."
-        />
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-12">
+        <div className="xl:col-span-3">
+          <MetricCard
+            label="Current hourly revenue"
+            value={formatCurrency(dashboard.revenue.currentHourlyRevenueUsd)}
+            description="Run-rate from active earning instances."
+          />
+        </div>
+        <div className="xl:col-span-3">
+          <MetricCard
+            label="Idle hourly opportunity"
+            value={formatCurrency(dashboard.revenue.idleHourlyOpportunityUsd)}
+            description="Visible capacity that could be earning right now."
+          />
+        </div>
+        <div className="xl:col-span-3">
+          <MetricCard
+            label="Online earning capacity"
+            value={String(dashboard.revenue.onlineCapacityCount)}
+            description="Mapped instances currently online."
+          />
+        </div>
+        <div className="xl:col-span-3">
+          <MetricCard
+            label="Attention queue"
+            value={String(dashboard.revenue.attentionCount)}
+            description="Instances blocked from earning."
+          />
+        </div>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-        <Card>
+      <div className="grid gap-4 xl:grid-cols-12">
+        <Card className="xl:col-span-8">
           <CardHeader>
             <CardDescription>Attention queue</CardDescription>
             <CardTitle>Fix these first to protect revenue</CardTitle>
@@ -149,7 +157,7 @@ export function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="xl:col-span-4">
           <CardHeader>
             <CardDescription>Datacenter portfolio</CardDescription>
             <CardTitle>Where earning capacity sits</CardTitle>
@@ -186,8 +194,8 @@ export function DashboardPage() {
         </Card>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[1fr_0.8fr_0.8fr]">
-        <Card>
+      <div className="grid gap-4 xl:grid-cols-12">
+        <Card className="xl:col-span-4">
           <CardHeader>
             <CardDescription>Top idle instances</CardDescription>
             <CardTitle>Fastest path to more revenue</CardTitle>
@@ -216,7 +224,7 @@ export function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="xl:col-span-4">
           <CardHeader>
             <CardDescription>Reservation pipeline</CardDescription>
             <CardTitle>Buyer activity snapshot</CardTitle>
@@ -243,7 +251,7 @@ export function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="xl:col-span-4">
           <CardHeader>
             <CardDescription>Deployment snapshot</CardDescription>
             <CardTitle>Live operating load</CardTitle>
