@@ -81,13 +81,19 @@ export function getInitials(value: string | null | undefined) {
     return 'NC'
   }
 
-  const parts = value
-    .split(/[\s@._-]+/)
+  const normalizedValue = value.includes('@') ? value.split('@')[0] : value
+  const parts = normalizedValue
+    .replace(/\d+/g, ' ')
+    .split(/[\s._-]+/)
     .filter(Boolean)
     .slice(0, 2)
 
   if (parts.length === 0) {
     return 'NC'
+  }
+
+  if (parts.length === 1 && parts[0].length >= 2) {
+    return parts[0].slice(0, 2).toUpperCase()
   }
 
   return parts.map((part) => part.charAt(0).toUpperCase()).join('')

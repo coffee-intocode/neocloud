@@ -75,7 +75,7 @@ class DatacenterPortfolioRow(CamelModel):
 class ZoneSummary(CamelModel):
     id: str
     name: str
-    site_id: int | None = None
+    site_id: str | None = None
     site_name: str | None = None
 
 
@@ -294,6 +294,7 @@ class DeploymentSnapshot(CamelModel):
 
 
 class OperatorDashboard(CamelModel):
+    demo_mode: bool = False
     revenue: RevenueSummary
     attention_items: list[AttentionItem]
     datacenters: list[DatacenterPortfolioRow]

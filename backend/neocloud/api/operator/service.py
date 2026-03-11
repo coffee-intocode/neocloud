@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
 
@@ -11,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..auth.schemas import AuthenticatedUser
 from ..brokkr import BrokkrApiError, BrokkrClient
-from .device_source import inventory_items_to_mock_devices
+from .demo_data import build_brokkr_deployment_detail, build_demo_dataset, build_demo_deployment_detail
 from .models import InstanceRevenueSnapshotModel, OperatorInstanceModel
 from .repository import OperatorInstanceRepository
 from .schemas import (
@@ -60,9 +61,10 @@ class OperatorState:
     bridge_requests: list[dict[str, Any]]
     devices: list[dict[str, Any]]
     reservations: list[dict[str, Any]]
+    deployments: list[dict[str, Any]]
     instances: list[OperatorInstanceModel]
     contacts_by_datacenter_id: dict[str, list[dict[str, Any]]]
-    devices_are_mocked: bool = False
+    demo_mode: bool = False
 
 
 @dataclass(slots=True)
@@ -111,6 +113,12 @@ def _price_from_cents(value: Any) -> float | None:
 def _format_decimal(value: Decimal | float | int | None) -> float:
     numeric = _to_float(value)
     return round(numeric or 0.0, 2)
+
+
+def _is_future_timestamp(value: str | None) -> bool:
+    if not value:
+        return False
+    return datetime.fromisoformat(value.replace('Z', '+00:00')) > datetime.now(UTC)
 
 
 def _device_datacenter_id(device: dict[str, Any]) -> str | None:
@@ -196,14 +204,15 @@ class OperatorService:
         deployment_rows = await self._build_deployment_rows(state)
 
         return OperatorDashboard(
+            demo_mode=state.demo_mode,
             revenue=revenue,
             attention_items=attention_items[:8],
             datacenters=datacenters[:6],
             top_idle_instances=top_idle,
             reservation_pipeline=ReservationPipelineSnapshot(
-                pending_count=len([row for row in reservation_rows if not row.date_accepted and not row.date_expires]),
+                pending_count=len([row for row in reservation_rows if not row.date_accepted and _is_future_timestamp(row.date_expires)]),
                 accepted_count=len([row for row in reservation_rows if row.date_accepted]),
-                expired_count=len([row for row in reservation_rows if row.date_expires and not row.date_accepted]),
+                expired_count=len([row for row in reservation_rows if not row.date_accepted and row.date_expires and not _is_future_timestamp(row.date_expires)]),
             ),
             deployments=DeploymentSnapshot(
                 total_count=len(deployment_rows),
@@ -233,7 +242,7 @@ class OperatorService:
             ZoneSummary(
                 id=str(zone.get('id')),
                 name=str(zone.get('name') or 'Unnamed zone'),
-                site_id=zone.get('siteId'),
+                site_id=str(zone.get('siteId')) if zone.get('siteId') is not None else None,
                 site_name=zone.get('siteName'),
             )
             for zone in state.zones
@@ -420,78 +429,71 @@ class OperatorService:
         return await self._build_deployment_rows(state)
 
     async def get_deployment_detail(self, deployment_id: str) -> DeploymentDetail:
+        state = await self._load_state()
+        if state.demo_mode:
+            for deployment in state.deployments:
+                if str(deployment.get('id')) == deployment_id:
+                    return build_demo_deployment_detail(deployment)
         detail = await self._brokkr.get_deployment(deployment_id)
-        return DeploymentDetail(
-            id=detail.id,
-            name=detail.name,
-            status=OperatorStatus(value=detail.status.value, label=detail.status.label),
-            power_status=OperatorStatus(value=detail.power_status.value, label=detail.power_status.label),
-            location=detail.location,
-            ipv4=detail.ipv4,
-            ipv6=detail.ipv6,
-            mac=detail.mac,
-            gpu_model=detail.gpu_model,
-            gpu_count=detail.gpu_count,
-            cpu_model=detail.cpu_model,
-            cpu_total_cores=detail.cpu_total_cores,
-            cpu_total_threads=detail.cpu_total_threads,
-            memory_total_gb=detail.memory_total_gb,
-            storage_total_gb=detail.storage_total_gb,
-            contract_type=detail.contract_type,
-            project_name=detail.project_name,
-            is_interruptible=detail.is_interruptible,
-            scheduled_interruption_time=detail.scheduled_interruption_time,
-            is_locked=detail.is_locked,
-            available_operating_systems=detail.available_operating_systems,
-            storage_layouts=detail.storage_layouts,
-            default_disk_layouts=detail.default_disk_layouts,
-            ssh_keys=detail.ssh_keys,
-            lifecycle_actions=detail.lifecycle_actions,
-            tags=detail.tags,
-            operator_instance_id=None,
-            operator_instance_name=None,
-        )
+        return build_brokkr_deployment_detail(detail)
 
     async def _load_state(self) -> OperatorState:
+        instances = list(await self._repo.list_instances())
+
+        if await self._should_use_demo_mode():
+            demo_state = await self._build_demo_state(instances)
+            if demo_state is not None:
+                return demo_state
+
         datacenters_task = self._brokkr.list_all_paginated('/datacenters')
         zones_task = self._brokkr.list_all_paginated('/zones')
         bridge_requests_task = self._brokkr.list_all_paginated('/bridge-requests')
         bridges_task = self._brokkr.list_all_paginated('/bridges')
-        devices_task = self._load_devices()
-        instances_task = self._repo.list_instances()
+        devices_task = self._brokkr.list_all_paginated('/devices')
+        deployments_task = self._brokkr.list_all_paginated('/deployments')
 
-        datacenters, zones, bridge_requests, bridges, devices_result, instances = await asyncio.gather(
+        datacenters, zones, bridge_requests, bridges, devices, deployments = await asyncio.gather(
             datacenters_task,
             zones_task,
             bridge_requests_task,
             bridges_task,
             devices_task,
-            instances_task,
+            deployments_task,
         )
-        devices, devices_are_mocked = devices_result
 
         contacts_by_datacenter_id = await self._load_contacts(datacenters)
-        reservations = [] if devices_are_mocked else await self._load_reservations(devices)
+        reservations = await self._load_reservations(devices)
 
-        return OperatorState(
+        state = OperatorState(
             datacenters=datacenters,
             zones=zones,
             bridges=bridges,
             bridge_requests=bridge_requests,
             devices=devices,
             reservations=reservations,
-            instances=list(instances),
+            deployments=deployments,
+            instances=instances,
             contacts_by_datacenter_id=contacts_by_datacenter_id,
-            devices_are_mocked=devices_are_mocked,
         )
+        return state
 
-    async def _load_devices(self) -> tuple[list[dict[str, Any]], bool]:
-        devices = await self._brokkr.list_all_paginated('/devices')
-        if devices:
-            return devices, False
-
-        inventory_items, _price_map = await self._brokkr.list_all_inventory()
-        return inventory_items_to_mock_devices(inventory_items), True
+    async def _build_demo_state(self, instances: list[OperatorInstanceModel]) -> OperatorState | None:
+        inventory_items = await self._brokkr.list_inventory_items()
+        demo = build_demo_dataset(inventory_items, instances)
+        if demo is None:
+            return None
+        return OperatorState(
+            datacenters=demo.datacenters,
+            zones=demo.zones,
+            bridges=demo.bridges,
+            bridge_requests=demo.bridge_requests,
+            devices=demo.devices,
+            reservations=demo.reservations,
+            deployments=demo.deployments,
+            instances=demo.instances,
+            contacts_by_datacenter_id=demo.contacts_by_datacenter_id,
+            demo_mode=True,
+        )
 
     async def _load_contacts(self, datacenters: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
         if not datacenters:
@@ -533,8 +535,8 @@ class OperatorService:
         return list(unique.values())
 
     async def _find_device(self, brokkr_device_id: str) -> dict[str, Any]:
-        devices, _devices_are_mocked = await self._load_devices()
-        for device in devices:
+        state = await self._load_state()
+        for device in state.devices:
             if str(device.get('id')) == brokkr_device_id:
                 return device
         raise OperatorServiceError(404, 'device_not_found', 'The selected Brokkr device was not found.')
@@ -599,7 +601,7 @@ class OperatorService:
 
         is_earning = _device_is_earning(device)
         current_hourly_revenue = hourly_rate if is_earning and online else 0.0
-        idle_hourly_opportunity = hourly_rate if listed and online and not is_earning else 0.0
+        idle_hourly_opportunity = hourly_rate if listed and online and not is_earning and attention_reason is None else 0.0
 
         return InstanceEvaluation(
             instance=instance,
@@ -724,9 +726,8 @@ class OperatorService:
         return sorted(rows, key=lambda row: row.date_created or '', reverse=True)
 
     async def _build_deployment_rows(self, state: OperatorState) -> list[DeploymentRow]:
-        payload = await self._brokkr.list_all_paginated('/deployments')
         rows: list[DeploymentRow] = []
-        for item in payload:
+        for item in state.deployments:
             rows.append(
                 DeploymentRow(
                     id=str(item.get('id')),
@@ -745,8 +746,22 @@ class OperatorService:
                     operator_instance_id=None,
                     operator_instance_name=None,
                 )
-            )
+        )
         return rows
+
+    async def _should_use_demo_mode(self) -> bool:
+        probe_paths = (
+            '/datacenters',
+            '/zones',
+            '/bridges',
+            '/bridge-requests',
+            '/devices',
+            '/deployments',
+        )
+        for path in probe_paths:
+            if await self._brokkr.has_paginated_data(path):
+                return False
+        return True
 
     def _normalize_bridge(self, bridge: dict[str, Any]) -> BridgeSummary:
         ip_addresses: list[str] = []

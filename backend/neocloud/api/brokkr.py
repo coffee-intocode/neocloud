@@ -553,6 +553,15 @@ class BrokkrClient:
 
         return [item for item in items if isinstance(item, dict)]
 
+    async def has_paginated_data(
+        self,
+        path: str,
+        *,
+        params: dict[str, Any] | None = None,
+    ) -> bool:
+        payload = await self._request('GET', path, params={'page': 1, 'pageSize': 1, **(params or {})})
+        return any(isinstance(item, dict) for item in payload.get('data') or [])
+
     async def _request(self, method: str, path: str, params: dict[str, Any] | None = None) -> Any:
         if not self._api_key:
             raise BrokkrApiError(
@@ -694,7 +703,13 @@ class BrokkrClient:
         )
 
     async def list_all_inventory(self) -> tuple[list[dict[str, Any]], dict[str, float]]:
-        first_page = await self._request('GET', '/inventory', params={'page': 1, 'pageSize': 100})
+        items = await self.list_inventory_items()
+        metadata = await self.get_inventory_metadata()
+        price_map = {_normalize_category(item.category): item.start_price for item in metadata.category_prices}
+        return items, {key: value for key, value in price_map.items() if key is not None}
+
+    async def list_inventory_items(self, *, page_size: int = 100) -> list[dict[str, Any]]:
+        first_page = await self._request('GET', '/inventory', params={'page': 1, 'pageSize': page_size})
         items = list(first_page.get('data') or [])
         meta = first_page.get('meta') or {}
         total_pages = int(meta.get('totalPages') or 1)
@@ -702,16 +717,14 @@ class BrokkrClient:
         if total_pages > 1:
             remaining = await asyncio.gather(
                 *[
-                    self._request('GET', '/inventory', params={'page': page, 'pageSize': 100})
+                    self._request('GET', '/inventory', params={'page': page, 'pageSize': page_size})
                     for page in range(2, total_pages + 1)
                 ]
             )
             for page_payload in remaining:
                 items.extend(page_payload.get('data') or [])
 
-        metadata = await self.get_inventory_metadata()
-        price_map = {_normalize_category(item.category): item.start_price for item in metadata.category_prices}
-        return items, {key: value for key, value in price_map.items() if key is not None}
+        return [item for item in items if isinstance(item, dict)]
 
     async def list_inventory(
         self,

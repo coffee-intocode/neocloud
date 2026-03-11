@@ -49,7 +49,7 @@ export interface DatacenterPortfolioRow {
 export interface ZoneSummary {
   id: string
   name: string
-  siteId: number | null
+  siteId: string | null
   siteName: string | null
 }
 
@@ -259,6 +259,7 @@ export interface DeploymentSnapshot {
 }
 
 export interface OperatorDashboard {
+  demoMode: boolean
   revenue: RevenueSummary
   attentionItems: AttentionItem[]
   datacenters: DatacenterPortfolioRow[]

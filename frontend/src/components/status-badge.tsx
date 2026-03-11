@@ -18,6 +18,7 @@ const variantClasses: Record<string, string> = {
   attention: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30',
   'bridge required': 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30',
   preorder: 'bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/30',
+  demo: 'bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/30',
   rejected: 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30',
   expired: 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30',
   hidden: 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30',

@@ -1,18 +1,19 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { getInstances, updateInstance } from '@/operator/api'
 import type { OperatorInstance, UpdateOperatorInstanceInput } from '@/operator/types'
+import { InstanceDetailDialog } from '@/components/instance-detail-dialog'
 import { InstanceDialog } from '@/components/instance-dialog'
 import { PageHeader } from '@/components/page-header'
 import { StatusBadge } from '@/components/status-badge'
-import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { formatCurrency, formatDateTime, formatHourlyPrice } from '@/lib/formatters'
+import { formatCurrency, formatHourlyPrice } from '@/lib/formatters'
 
 export function InstancesPage() {
+  const [selectedInstance, setSelectedInstance] = useState<OperatorInstance | null>(null)
   const [editingInstance, setEditingInstance] = useState<OperatorInstance | null>(null)
   const queryClient = useQueryClient()
 
@@ -33,6 +34,32 @@ export function InstancesPage() {
       ])
     },
   })
+
+  const sortedInstances = useMemo(() => {
+    if (!instancesQuery.data) {
+      return []
+    }
+
+    const instances: OperatorInstance[] = instancesQuery.data
+
+    return [...instances].sort((left, right) => {
+      const leftNeedsAttention = left.attentionReason ? 1 : 0
+      const rightNeedsAttention = right.attentionReason ? 1 : 0
+
+      if (leftNeedsAttention !== rightNeedsAttention) {
+        return rightNeedsAttention - leftNeedsAttention
+      }
+
+      const leftCommercialImpact = left.currentHourlyRevenueUsd + left.idleHourlyOpportunityUsd + left.hourlyRateUsd
+      const rightCommercialImpact =
+        right.currentHourlyRevenueUsd + right.idleHourlyOpportunityUsd + right.hourlyRateUsd
+      if (leftCommercialImpact !== rightCommercialImpact) {
+        return rightCommercialImpact - leftCommercialImpact
+      }
+
+      return left.displayName.localeCompare(right.displayName)
+    })
+  }, [instancesQuery.data])
 
   if (instancesQuery.isLoading) {
     return <Skeleton className="h-[70vh] rounded-3xl" />
@@ -63,7 +90,7 @@ export function InstancesPage() {
           <CardTitle>Device-backed products</CardTitle>
         </CardHeader>
         <CardContent>
-          {instancesQuery.data.length === 0 ? (
+          {sortedInstances.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border/70 p-6 text-sm text-muted-foreground">
               No local instances exist yet. Create them from the Devices page to connect pricing and revenue logic to
               real devices.
@@ -73,56 +100,54 @@ export function InstancesPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Instance</TableHead>
-                  <TableHead>Device</TableHead>
+                  <TableHead>Facility</TableHead>
                   <TableHead>Market</TableHead>
                   <TableHead>Revenue / hr</TableHead>
-                  <TableHead>Opportunity / hr</TableHead>
                   <TableHead>Attention</TableHead>
-                  <TableHead>Updated</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {instancesQuery.data.map((instance) => (
-                  <TableRow key={instance.id}>
+                {sortedInstances.map((instance) => (
+                  <TableRow
+                    key={instance.id}
+                    className="cursor-pointer"
+                    tabIndex={0}
+                    onClick={() => {
+                      setSelectedInstance(instance)
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault()
+                        setSelectedInstance(instance)
+                      }
+                    }}
+                  >
                     <TableCell>
                       <p className="font-medium">{instance.displayName}</p>
                       <p className="text-xs text-muted-foreground">
-                        {instance.gpuModel ?? 'Unknown GPU'} • {instance.datacenterName ?? 'Unassigned datacenter'}
+                        {instance.gpuModel ?? 'Unknown GPU'} • {instance.deviceName ?? 'Device unavailable'}
                       </p>
                     </TableCell>
                     <TableCell>
-                      <p>{instance.deviceName ?? instance.brokkrDeviceId}</p>
-                      <p className="text-xs text-muted-foreground">{instance.brokkrDeviceId}</p>
+                      <p>{instance.datacenterName ?? 'Unassigned datacenter'}</p>
+                      <p className="text-xs text-muted-foreground">{instance.online ? 'Online' : 'Offline'}</p>
                     </TableCell>
                     <TableCell>
-                      <div className="space-y-1">
+                      <div className="flex flex-col gap-1">
                         <StatusBadge value={instance.marketStatus} />
-                        <p className="text-xs text-muted-foreground">
-                          {instance.isVisible ? 'Visible to market' : 'Hidden from market'}
-                        </p>
                         <p className="text-xs text-primary">{formatHourlyPrice(instance.hourlyRateUsd)}</p>
                       </div>
                     </TableCell>
                     <TableCell>{formatCurrency(instance.currentHourlyRevenueUsd)}</TableCell>
-                    <TableCell>{formatCurrency(instance.idleHourlyOpportunityUsd)}</TableCell>
                     <TableCell>
                       {instance.attentionReason ? (
-                        <p className="max-w-xs text-sm text-muted-foreground">{instance.attentionReason}</p>
+                        <div className="flex flex-col gap-1">
+                          <StatusBadge value="Attention" className="w-fit" />
+                          <p className="max-w-xs text-xs text-muted-foreground">{instance.attentionReason}</p>
+                        </div>
                       ) : (
                         <StatusBadge value="Healthy" />
                       )}
-                    </TableCell>
-                    <TableCell>{formatDateTime(instance.updatedAt)}</TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setEditingInstance(instance)
-                        }}
-                      >
-                        Edit
-                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -131,6 +156,21 @@ export function InstancesPage() {
           )}
         </CardContent>
       </Card>
+
+      {selectedInstance ? (
+        <InstanceDetailDialog
+          open
+          onOpenChange={(open) => {
+            if (!open) {
+              setSelectedInstance(null)
+            }
+          }}
+          instance={selectedInstance}
+          onEdit={() => {
+            setEditingInstance(selectedInstance)
+          }}
+        />
+      ) : null}
 
       {editingInstance ? (
         <InstanceDialog

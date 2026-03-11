@@ -1,22 +1,22 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
 
 import { createInstance, getDevices } from '@/operator/api'
 import type { CreateOperatorInstanceInput, DeviceRow } from '@/operator/types'
+import { DeviceDetailDialog } from '@/components/device-detail-dialog'
 import { InstanceDialog } from '@/components/instance-dialog'
 import { PageHeader } from '@/components/page-header'
 import { StatusBadge } from '@/components/status-badge'
-import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { formatGigabytes, formatHourlyPrice } from '@/lib/formatters'
+import { formatHourlyPrice } from '@/lib/formatters'
 
 export function DevicesPage() {
   const [search, setSearch] = useState('')
   const [selectedDevice, setSelectedDevice] = useState<DeviceRow | null>(null)
+  const [creatingDevice, setCreatingDevice] = useState<DeviceRow | null>(null)
   const queryClient = useQueryClient()
 
   const devicesQuery = useQuery({
@@ -42,15 +42,31 @@ export function DevicesPage() {
     }
 
     const normalized = search.trim().toLowerCase()
-    if (normalized.length === 0) {
-      return devicesQuery.data
-    }
+    const matchingDevices: DeviceRow[] =
+      normalized.length === 0
+        ? devicesQuery.data
+        : devicesQuery.data.filter((device) =>
+            [device.name, device.gpuModel, device.cpuModel, device.datacenterName, device.zoneName, device.location]
+              .filter(Boolean)
+              .some((value) => String(value).toLowerCase().includes(normalized)),
+          )
 
-    return devicesQuery.data.filter((device) =>
-      [device.name, device.gpuModel, device.cpuModel, device.datacenterName, device.zoneName, device.location]
-        .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(normalized)),
-    )
+    return [...matchingDevices].sort((left, right) => {
+      const leftNeedsAttention = left.attentionReason ? 1 : 0
+      const rightNeedsAttention = right.attentionReason ? 1 : 0
+
+      if (leftNeedsAttention !== rightNeedsAttention) {
+        return rightNeedsAttention - leftNeedsAttention
+      }
+
+      const leftPrice = left.onDemandPriceUsd ?? 0
+      const rightPrice = right.onDemandPriceUsd ?? 0
+      if (leftPrice !== rightPrice) {
+        return rightPrice - leftPrice
+      }
+
+      return left.name.localeCompare(right.name)
+    })
   }, [devicesQuery.data, search])
 
   return (
@@ -104,21 +120,31 @@ export function DevicesPage() {
                   <TableRow>
                     <TableHead>Device</TableHead>
                     <TableHead>Facility</TableHead>
-                    <TableHead>Health</TableHead>
-                    <TableHead>Listing</TableHead>
-                    <TableHead>Mapped instance</TableHead>
+                    <TableHead>Market</TableHead>
+                    <TableHead>Instance</TableHead>
                     <TableHead>Attention</TableHead>
-                    <TableHead className="text-right">Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredDevices.map((device) => (
-                    <TableRow key={device.id}>
+                    <TableRow
+                      key={device.id}
+                      className="cursor-pointer"
+                      tabIndex={0}
+                      onClick={() => {
+                        setSelectedDevice(device)
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault()
+                          setSelectedDevice(device)
+                        }
+                      }}
+                    >
                       <TableCell>
                         <p className="font-medium">{device.name}</p>
                         <p className="text-xs text-muted-foreground">
-                          {device.gpuModel ?? 'Unknown GPU'} • {device.gpuCount ?? 0} GPU •{' '}
-                          {formatGigabytes(device.memoryTotalGb)}
+                          {device.gpuModel ?? 'Unknown GPU'} • {device.gpuCount ?? 0} GPU
                         </p>
                       </TableCell>
                       <TableCell>
@@ -128,54 +154,32 @@ export function DevicesPage() {
                         </p>
                       </TableCell>
                       <TableCell>
-                        <div className="flex flex-wrap gap-2">
-                          <StatusBadge value={device.status.label} />
-                          <StatusBadge value={device.powerStatus.label} />
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <StatusBadge value={device.listingActive ? 'Listed' : 'Draft'} />
+                        <div className="flex flex-col gap-1">
+                          <div className="flex flex-wrap gap-2">
+                            <StatusBadge value={device.status.label} />
+                            <StatusBadge value={device.listingActive ? 'Listed' : 'Draft'} />
+                          </div>
                           <p className="text-xs text-muted-foreground">
                             {device.onDemandPriceUsd ? formatHourlyPrice(device.onDemandPriceUsd) : 'No Brokkr price'}
                           </p>
-                          {device.interruptibleOnly ? (
-                            <p className="text-xs text-muted-foreground">Interruptible only</p>
-                          ) : null}
                         </div>
                       </TableCell>
                       <TableCell>
-                        {device.instanceId ? (
-                          <div className="space-y-1">
-                            <Link to={`/instances`} className="font-medium text-primary hover:underline">
-                              {device.instanceName}
-                            </Link>
-                            <p className="text-xs text-muted-foreground">Device-backed instance</p>
-                          </div>
-                        ) : (
-                          <p className="text-sm text-muted-foreground">No local instance yet</p>
-                        )}
+                        <div className="flex flex-col gap-1">
+                          <p className="font-medium">{device.instanceName ?? 'Unmapped'}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {device.instanceId ? 'Device-backed instance' : 'Ready for commercial setup'}
+                          </p>
+                        </div>
                       </TableCell>
                       <TableCell>
                         {device.attentionReason ? (
-                          <p className="max-w-xs text-sm text-muted-foreground">{device.attentionReason}</p>
+                          <div className="flex flex-col gap-1">
+                            <StatusBadge value="Attention" className="w-fit" />
+                            <p className="max-w-xs text-xs text-muted-foreground">{device.attentionReason}</p>
+                          </div>
                         ) : (
                           <StatusBadge value="Healthy" />
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {device.instanceId ? (
-                          <Button asChild variant="outline">
-                            <Link to="/instances">View instance</Link>
-                          </Button>
-                        ) : (
-                          <Button
-                            onClick={() => {
-                              setSelectedDevice(device)
-                            }}
-                          >
-                            Create instance
-                          </Button>
                         )}
                       </TableCell>
                     </TableRow>
@@ -188,18 +192,33 @@ export function DevicesPage() {
       )}
 
       {selectedDevice ? (
-        <InstanceDialog
+        <DeviceDetailDialog
           open
           onOpenChange={(open) => {
             if (!open) {
               setSelectedDevice(null)
             }
           }}
+          device={selectedDevice}
+          onCreateInstance={() => {
+            setCreatingDevice(selectedDevice)
+          }}
+        />
+      ) : null}
+
+      {creatingDevice ? (
+        <InstanceDialog
+          open
+          onOpenChange={(open) => {
+            if (!open) {
+              setCreatingDevice(null)
+            }
+          }}
           mode="create"
-          title={`Create instance for ${selectedDevice.name}`}
+          title={`Create instance for ${creatingDevice.name}`}
           description="Define the commercial product layered on top of this live Brokkr device."
           submitLabel={createInstanceMutation.isPending ? 'Creating...' : 'Create instance'}
-          deviceId={selectedDevice.id}
+          deviceId={creatingDevice.id}
           datacenterId={null}
           onSubmit={async (payload) => {
             await createInstanceMutation.mutateAsync(payload as CreateOperatorInstanceInput)

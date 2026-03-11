@@ -7,11 +7,9 @@ import { ResetPasswordForm } from './components/auth/ResetPassword'
 import { SignInForm } from './components/auth/SignIn'
 import { SignUpForm } from './components/auth/Signup'
 import { SignUpSuccess } from './components/auth/SignUpSuccess'
-import { DeploymentDetailPage } from './pages/deployment-detail-page'
 import { DashboardPage } from './pages/dashboard-page'
 import { DatacenterDetailPage } from './pages/datacenter-detail-page'
 import { DatacentersPage } from './pages/datacenters-page'
-import { DeploymentsPage } from './pages/deployments-page'
 import { DevicesPage } from './pages/devices-page'
 import { InstancesPage } from './pages/instances-page'
 import { NetworkPage } from './pages/network-page'
@@ -53,14 +51,6 @@ export const router = createBrowserRouter([
       {
         path: 'reservations',
         element: <ReservationsPage />,
-      },
-      {
-        path: 'deployments',
-        element: <DeploymentsPage />,
-      },
-      {
-        path: 'deployments/:deploymentId',
-        element: <DeploymentDetailPage />,
       },
     ],
   },

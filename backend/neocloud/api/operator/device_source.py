@@ -9,10 +9,10 @@ ACTIVE_STOCK_STATUSES = {'ondemand', 'reserve', 'preorder'}
 
 
 def inventory_items_to_mock_devices(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    return [_inventory_item_to_mock_device(item) for item in items]
+    return [inventory_item_to_mock_device(item) for item in items]
 
 
-def _inventory_item_to_mock_device(item: dict[str, Any]) -> dict[str, Any]:
+def inventory_item_to_mock_device(item: dict[str, Any]) -> dict[str, Any]:
     stock_status = str(item.get('stockStatus') or '').lower()
     listing = item.get('listing') if isinstance(item.get('listing'), dict) else {}
 

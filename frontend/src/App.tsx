@@ -3,7 +3,8 @@ import { Link, Outlet } from 'react-router-dom'
 
 import { getOperatorDashboard } from '@/operator/api'
 import { AppSidebar } from '@/components/app-sidebar'
-import { ModeToggle } from '@/components/mode-toggle'
+import { StatusBadge } from '@/components/status-badge'
+import { UserMenu } from '@/components/user-menu'
 import { Button } from '@/components/ui/button'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -60,16 +61,13 @@ export default function App() {
   return (
     <SidebarProvider defaultOpen>
       <div className="flex min-h-screen w-full bg-[radial-gradient(circle_at_top_left,_color-mix(in_oklab,var(--primary)_18%,transparent),transparent_22%),linear-gradient(180deg,color-mix(in_oklab,var(--background)_92%,#181526_8%),var(--background))]">
-        <AppSidebar overview={overviewQuery.data} />
+        <AppSidebar />
         <SidebarInset className="min-h-screen bg-transparent">
           <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-border/60 bg-background/85 px-4 backdrop-blur md:px-6">
             <SidebarTrigger />
-            <div className="min-w-0">
-              <p className="text-sm font-semibold">Neocloud</p>
-              <p className="truncate text-xs text-muted-foreground">Operator console for GPU supply</p>
-            </div>
-            <div className="ml-auto">
-              <ModeToggle />
+            <div className="ml-auto flex items-center gap-3">
+              {overviewQuery.data.demoMode ? <StatusBadge value="Demo" /> : null}
+              <UserMenu />
             </div>
           </header>
 
