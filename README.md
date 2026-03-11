@@ -1,8 +1,8 @@
 # Neocloud
 
-Barebones scaffold with:
+Scaffold with:
 
-- `frontend`: public chat client
-- `backend/agent`: stateless FastAPI server with streaming AI chat
+- `frontend`: routed app with Supabase auth scaffolding
+- `backend/agent`: FastAPI server with Supabase JWT verification and database session scaffolding
 
-This version intentionally has no authentication, no database, and no migrations.
+This setup includes auth and database wiring, but it does not restore the old app tables, models, or Alembic migrations.

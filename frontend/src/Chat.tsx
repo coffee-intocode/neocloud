@@ -20,7 +20,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport, type UIMessage } from 'ai'
 import { AlertTriangleIcon, Settings2Icon } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type SyntheticEvent } from 'react'
 import { useQuery } from '@tanstack/react-query'
 
 import { API_ENDPOINTS } from '@/config'
@@ -43,7 +43,9 @@ interface RemoteConfig {
   builtinTools: BuiltinTool[]
 }
 
-function isSourceUrlPart(part: UIMessage['parts'][number]): part is UIMessage['parts'][number] & { type: 'source-url'; url: string } {
+function isSourceUrlPart(
+  part: UIMessage['parts'][number],
+): part is UIMessage['parts'][number] & { type: 'source-url'; url: string } {
   return part.type === 'source-url' && 'url' in part && typeof (part as { url?: unknown }).url === 'string'
 }
 
@@ -103,7 +105,7 @@ const Chat = () => {
     return configQuery.data?.builtinTools.filter((tool) => enabledToolIds.includes(tool.id)) ?? []
   }, [configQuery.data, model])
 
-  const handleSubmit = (event: FormEvent) => {
+  const handleSubmit = (event: SyntheticEvent<HTMLFormElement, SubmitEvent>) => {
     event.preventDefault()
     const trimmedInput = input.trim()
     if (!trimmedInput || status === 'submitted' || status === 'streaming') {
@@ -112,10 +114,7 @@ const Chat = () => {
 
     const nextInput = trimmedInput
     setInput('')
-    sendMessage(
-      { text: nextInput },
-      { body: { model, builtinTools: enabledTools } },
-    ).catch((error: unknown) => {
+    sendMessage({ text: nextInput }, { body: { model, builtinTools: enabledTools } }).catch((error: unknown) => {
       console.error('Error sending message:', error)
       setInput(nextInput)
     })
@@ -151,7 +150,8 @@ const Chat = () => {
             <div className="mx-auto mt-24 max-w-2xl rounded-3xl border bg-card/60 p-8 text-center shadow-sm">
               <h2 className="text-2xl font-semibold tracking-tight">Start with a prompt</h2>
               <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                This scaffold is stateless. There is no auth, no onboarding, and no persisted chat history in this version.
+                This scaffold is stateless. There is no auth, no onboarding, and no persisted chat history in this
+                version.
               </p>
             </div>
           )}
@@ -262,7 +262,10 @@ const Chat = () => {
                 </PromptInputModelSelect>
               )}
             </PromptInputTools>
-            <PromptInputSubmit disabled={!input.trim() || status === 'submitted' || status === 'streaming'} status={status} />
+            <PromptInputSubmit
+              disabled={!input.trim() || status === 'submitted' || status === 'streaming'}
+              status={status}
+            />
           </PromptInputToolbar>
         </PromptInput>
       </div>
