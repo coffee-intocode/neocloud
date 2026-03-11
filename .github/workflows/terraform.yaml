@@ -23,13 +23,13 @@ jobs:
       - uses: actions/checkout@v4
 
       - run: terraform fmt -check
-        working-directory: ./backend/agent/terraform
+        working-directory: ./backend/neocloud/terraform
 
       - run: terraform init
-        working-directory: ./backend/agent/terraform
+        working-directory: ./backend/neocloud/terraform
 
       - run: terraform validate
-        working-directory: ./backend/agent/terraform
+        working-directory: ./backend/neocloud/terraform
 
   plan:
     concurrency:
@@ -48,10 +48,10 @@ jobs:
       - uses: actions/checkout@v4
 
       - run: terraform init
-        working-directory: ./backend/agent/terraform
+        working-directory: ./backend/neocloud/terraform
 
       - run: terraform plan -out "terraform.tfplan"
-        working-directory: ./backend/agent/terraform
+        working-directory: ./backend/neocloud/terraform
 
       - uses: actions/upload-artifact@v4
         with:
@@ -81,10 +81,10 @@ jobs:
         with:
           name: tf-plan
           # Not sure if the path is needed here
-          path: backend/agent/terraform
+          path: backend/neocloud/terraform
 
       - run: terraform init
-        working-directory: ./backend/agent/terraform
+        working-directory: ./backend/neocloud/terraform
 
       - run: terraform apply "terraform.tfplan"
-        working-directory: ./backend/agent/terraform
+        working-directory: ./backend/neocloud/terraform
