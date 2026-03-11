@@ -1,8 +1,16 @@
-import { CpuIcon, LayoutDashboardIcon, LogOutIcon, ServerIcon } from 'lucide-react'
+import {
+  Building2Icon,
+  LayoutDashboardIcon,
+  LogOutIcon,
+  NetworkIcon,
+  Package2Icon,
+  ServerCogIcon,
+  TicketIcon,
+} from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
 import type { ComponentProps } from 'react'
 
-import type { OverviewResponse } from '@/brokkr/types'
+import type { OperatorDashboard } from '@/operator/types'
 import { useAuth } from '@/context/AuthContext'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -22,20 +30,24 @@ import {
 import { getInitials } from '@/lib/formatters'
 
 const navigation = [
-  { title: 'Overview', url: '/', icon: LayoutDashboardIcon, end: true },
-  { title: 'Inventory', url: '/inventory', icon: CpuIcon },
-  { title: 'Deployments', url: '/deployments', icon: ServerIcon },
+  { title: 'Dashboard', url: '/', icon: LayoutDashboardIcon, end: true },
+  { title: 'Datacenters', url: '/datacenters', icon: Building2Icon },
+  { title: 'Network', url: '/network', icon: NetworkIcon },
+  { title: 'Devices', url: '/devices', icon: ServerCogIcon },
+  { title: 'Instances', url: '/instances', icon: Package2Icon },
+  { title: 'Reservations', url: '/reservations', icon: TicketIcon },
+  { title: 'Deployments', url: '/deployments', icon: ServerCogIcon },
 ]
 
 export function AppSidebar({
   overview,
   ...props
 }: ComponentProps<typeof Sidebar> & {
-  overview: OverviewResponse
+  overview: OperatorDashboard
 }) {
   const location = useLocation()
-  const { signOut } = useAuth()
-  const userLabel = overview.user?.name ?? overview.user?.email ?? 'Connected account'
+  const { signOut, user } = useAuth()
+  const userLabel = user?.email ?? 'Connected account'
 
   return (
     <Sidebar collapsible="icon" variant="sidebar" {...props}>
@@ -51,23 +63,21 @@ export function AppSidebar({
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">Neocloud</span>
-                <span className="truncate text-xs text-sidebar-foreground/70">Read-only Brokkr control plane</span>
+                <span className="truncate text-xs text-sidebar-foreground/70">Operator console</span>
               </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem className="group-data-[collapsible=icon]:hidden">
             <SidebarMenuButton size="lg">
               <Avatar className="size-8 rounded-lg border border-sidebar-border/70">
-                <AvatarImage src={overview.organization.logoUrl ?? undefined} alt={overview.organization.name} />
+                <AvatarImage src={undefined} alt="Operator context" />
                 <AvatarFallback className="rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                  {getInitials(overview.organization.name)}
+                  NC
                 </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{overview.organization.name}</span>
-                <span className="truncate text-xs text-sidebar-foreground/70">
-                  {overview.organization.tenantType ?? 'Organization'}
-                </span>
+                <span className="truncate font-medium">Revenue command center</span>
+                <span className="truncate text-xs text-sidebar-foreground/70">Supply-side Brokkr operations</span>
               </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -103,14 +113,24 @@ export function AppSidebar({
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton>
-                  <span className="truncate">Deployments</span>
-                  <span className="ml-auto text-xs text-sidebar-foreground/70">{overview.deploymentCount}</span>
+                  <span className="truncate">Revenue / hr</span>
+                  <span className="ml-auto text-xs text-sidebar-foreground/70">
+                    ${overview.revenue.currentHourlyRevenueUsd.toFixed(2)}
+                  </span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton>
-                  <span className="truncate">Regions</span>
-                  <span className="ml-auto text-xs text-sidebar-foreground/70">{overview.inventoryRegionCount}</span>
+                  <span className="truncate">Opportunity / hr</span>
+                  <span className="ml-auto text-xs text-sidebar-foreground/70">
+                    ${overview.revenue.idleHourlyOpportunityUsd.toFixed(2)}
+                  </span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton>
+                  <span className="truncate">Attention</span>
+                  <span className="ml-auto text-xs text-sidebar-foreground/70">{overview.revenue.attentionCount}</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
@@ -123,7 +143,7 @@ export function AppSidebar({
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" tooltip={userLabel}>
               <Avatar className="size-8 rounded-lg border border-sidebar-border/70">
-                <AvatarImage src={overview.user?.avatarUrl ?? undefined} alt={userLabel} />
+                <AvatarImage src={undefined} alt={userLabel} />
                 <AvatarFallback className="rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
                   {getInitials(userLabel)}
                 </AvatarFallback>
@@ -131,7 +151,7 @@ export function AppSidebar({
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{userLabel}</span>
                 <span className="truncate text-xs text-sidebar-foreground/70">
-                  {overview.user?.membershipRole ?? overview.user?.role ?? 'API session'}
+                  {user?.email ?? 'Operator session'}
                 </span>
               </div>
             </SidebarMenuButton>

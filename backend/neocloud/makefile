@@ -73,7 +73,7 @@ deploy:
 	fi
 
 start: build
-	uv run uvicorn chatbot.app:app --reload --host 0.0.0.0 --port 8081
+	uv run uvicorn api.app:app --reload --host 0.0.0.0 --port 8081
 
 dev:
-	uv run uvicorn chatbot.app:app --reload --host 0.0.0.0 --port 8081
+	uv run uvicorn api.app:app --reload --host 0.0.0.0 --port 8081

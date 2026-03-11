@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link, Outlet } from 'react-router-dom'
 
-import { getOverview } from '@/brokkr/api'
+import { getOperatorDashboard } from '@/operator/api'
 import { AppSidebar } from '@/components/app-sidebar'
 import { ModeToggle } from '@/components/mode-toggle'
 import { Button } from '@/components/ui/button'
@@ -10,8 +10,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 
 export default function App() {
   const overviewQuery = useQuery({
-    queryKey: ['brokkr', 'overview'],
-    queryFn: getOverview,
+    queryKey: ['operator', 'dashboard'],
+    queryFn: getOperatorDashboard,
   })
 
   if (overviewQuery.isLoading) {
@@ -36,7 +36,7 @@ export default function App() {
       <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top_left,_color-mix(in_oklab,var(--primary)_18%,transparent),transparent_22%),linear-gradient(180deg,color-mix(in_oklab,var(--background)_92%,#181526_8%),var(--background))] p-6">
         <div className="w-full max-w-xl rounded-3xl border border-destructive/30 bg-card p-8 shadow-xl">
           <p className="text-sm font-semibold uppercase tracking-[0.3em] text-primary">Connection issue</p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight">Unable to reach the Brokkr control plane</h1>
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight">Unable to reach the operator control plane</h1>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">{message}</p>
           <div className="mt-6 flex items-center gap-3">
             <Button
@@ -49,7 +49,7 @@ export default function App() {
               Retry
             </Button>
             <Button asChild variant="outline">
-              <Link to="/inventory">Go to inventory route</Link>
+              <Link to="/devices">Go to devices route</Link>
             </Button>
           </div>
         </div>
@@ -66,7 +66,7 @@ export default function App() {
             <SidebarTrigger />
             <div className="min-w-0">
               <p className="text-sm font-semibold">Neocloud</p>
-              <p className="truncate text-xs text-muted-foreground">Read-only Brokkr control plane</p>
+              <p className="truncate text-xs text-muted-foreground">Operator console for GPU supply</p>
             </div>
             <div className="ml-auto">
               <ModeToggle />

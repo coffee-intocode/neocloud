@@ -1,4 +1,4 @@
-import { useCallback, useState, type FormEvent } from 'react'
+import { useCallback, useState, type SyntheticEvent } from 'react'
 import { Link } from 'react-router-dom'
 
 import { useAuth } from '@/context/AuthContext'
@@ -16,7 +16,7 @@ export function ForgotPasswordForm() {
   const { resetPassword } = useAuth()
 
   const handleSubmit = useCallback(
-    async (event: FormEvent<HTMLFormElement>) => {
+    async (event: SyntheticEvent<HTMLFormElement>) => {
       event.preventDefault()
       setError(null)
       setIsLoading(true)

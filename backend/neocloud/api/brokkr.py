@@ -520,6 +520,39 @@ class BrokkrClient:
     def base_url(self) -> str:
         return self._base_url
 
+    async def request_json(
+        self,
+        method: str,
+        path: str,
+        *,
+        params: dict[str, Any] | None = None,
+    ) -> Any:
+        return await self._request(method, path, params=params)
+
+    async def list_all_paginated(
+        self,
+        path: str,
+        *,
+        page_size: int = 100,
+        params: dict[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
+        request_params = {'page': 1, 'pageSize': page_size, **(params or {})}
+        first_page = await self._request('GET', path, params=request_params)
+        items = list(first_page.get('data') or [])
+        total_pages = int((first_page.get('meta') or {}).get('totalPages') or 1)
+
+        if total_pages > 1:
+            remaining_pages = await asyncio.gather(
+                *[
+                    self._request('GET', path, params={'page': page, 'pageSize': page_size, **(params or {})})
+                    for page in range(2, total_pages + 1)
+                ]
+            )
+            for page_payload in remaining_pages:
+                items.extend(page_payload.get('data') or [])
+
+        return [item for item in items if isinstance(item, dict)]
+
     async def _request(self, method: str, path: str, params: dict[str, Any] | None = None) -> Any:
         if not self._api_key:
             raise BrokkrApiError(

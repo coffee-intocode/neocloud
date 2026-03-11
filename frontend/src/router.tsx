@@ -8,10 +8,14 @@ import { SignInForm } from './components/auth/SignIn'
 import { SignUpForm } from './components/auth/Signup'
 import { SignUpSuccess } from './components/auth/SignUpSuccess'
 import { DeploymentDetailPage } from './pages/deployment-detail-page'
+import { DashboardPage } from './pages/dashboard-page'
+import { DatacenterDetailPage } from './pages/datacenter-detail-page'
+import { DatacentersPage } from './pages/datacenters-page'
 import { DeploymentsPage } from './pages/deployments-page'
-import { InventoryDetailPage } from './pages/inventory-detail-page'
-import { InventoryPage } from './pages/inventory-page'
-import { OverviewPage } from './pages/overview-page'
+import { DevicesPage } from './pages/devices-page'
+import { InstancesPage } from './pages/instances-page'
+import { NetworkPage } from './pages/network-page'
+import { ReservationsPage } from './pages/reservations-page'
 
 export const router = createBrowserRouter([
   {
@@ -24,15 +28,31 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <OverviewPage />,
+        element: <DashboardPage />,
       },
       {
-        path: 'inventory',
-        element: <InventoryPage />,
+        path: 'datacenters',
+        element: <DatacentersPage />,
       },
       {
-        path: 'inventory/:inventoryId',
-        element: <InventoryDetailPage />,
+        path: 'datacenters/:datacenterId',
+        element: <DatacenterDetailPage />,
+      },
+      {
+        path: 'network',
+        element: <NetworkPage />,
+      },
+      {
+        path: 'devices',
+        element: <DevicesPage />,
+      },
+      {
+        path: 'instances',
+        element: <InstancesPage />,
+      },
+      {
+        path: 'reservations',
+        element: <ReservationsPage />,
       },
       {
         path: 'deployments',

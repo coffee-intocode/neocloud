@@ -10,5 +10,5 @@ Run locally:
 
 ```bash
 uv sync
-uv run uvicorn chatbot.app:app --reload
+uv run uvicorn api.app:app --reload
 ```

@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { ArrowLeftIcon, LockIcon } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 
-import { getDeployment } from '@/brokkr/api'
+import { getDeployment } from '@/operator/api'
 import { StatusBadge } from '@/components/status-badge'
 import { PageHeader } from '@/components/page-header'
 import { Button } from '@/components/ui/button'
@@ -62,7 +62,7 @@ export function DeploymentDetailPage() {
       <PageHeader
         eyebrow="Deployment detail"
         title={deployment.name}
-        description="Live deployment metadata surfaced from Brokkr. Mutating controls are intentionally withheld in this version."
+        description="Live deployment metadata surfaced through the operator API. Mutating controls are intentionally withheld in this version."
         actions={
           <div className="flex flex-wrap gap-2">
             <StatusBadge value={deployment.status.label} />
@@ -119,11 +119,11 @@ export function DeploymentDetailPage() {
             <CardContent className="space-y-3 text-sm text-muted-foreground">
               <div className="flex items-center gap-3 rounded-xl border border-primary/15 bg-background/70 p-3">
                 <LockIcon className="size-4 text-primary" />
-                <span>This screen proves the integration path without performing power or provisioning actions.</span>
+                <span>This screen proves the operating view without performing power or provisioning actions.</span>
               </div>
               <p>
-                Stretch goals can add power control, reboot, metrics, and SSH workflows once infrastructure spend is
-                clarified.
+                Later phases can add power control, reboot, metrics, and SSH workflows once that operational scope is
+                approved.
               </p>
             </CardContent>
           </Card>

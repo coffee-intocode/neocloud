@@ -3,6 +3,7 @@ name = "neocloud-agent"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
+    "alembic>=1.16.5",
     "asyncpg>=0.30.0",
     "email-validator>=2.2.0",
     "fastapi>=0.118.0",
@@ -23,7 +24,7 @@ dev = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["chatbot*"]
+include = ["api*"]
 exclude = ["testing*"]
 
 [tool.ruff.format]

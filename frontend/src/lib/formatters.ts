@@ -68,6 +68,14 @@ export function titleCase(value: string | null | undefined) {
     .join(' ')
 }
 
+export function formatPercent(value: number | null | undefined) {
+  if (value == null) {
+    return 'Unavailable'
+  }
+
+  return `${value.toFixed(value >= 10 ? 0 : 1)}%`
+}
+
 export function getInitials(value: string | null | undefined) {
   if (!value) {
     return 'NC'

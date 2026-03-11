@@ -1,4 +1,4 @@
-import { useCallback, useState, type FormEvent } from 'react'
+import { useCallback, useState, type SyntheticEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { useAuth } from '@/context/AuthContext'
@@ -17,7 +17,7 @@ export function ResetPasswordForm() {
   const navigate = useNavigate()
 
   const handleSubmit = useCallback(
-    async (event: FormEvent<HTMLFormElement>) => {
+    async (event: SyntheticEvent<HTMLFormElement>) => {
       event.preventDefault()
       setError(null)
 
@@ -40,7 +40,7 @@ export function ResetPasswordForm() {
         return
       }
 
-      navigate('/', { replace: true })
+      await Promise.resolve(navigate('/', { replace: true }))
     },
     [confirmPassword, navigate, password, updatePassword],
   )
