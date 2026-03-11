@@ -14,7 +14,7 @@ COPY pyproject.toml uv.lock ./
 RUN uv pip install --system --no-cache -r pyproject.toml
 
 # Copy the source code
-COPY chatbot ./chatbot
+COPY neocloud ./neocloud
 COPY alembic ./alembic
 COPY alembic.ini ./
 
@@ -43,7 +43,7 @@ COPY --from=build /usr/local/lib/python3.12/site-packages /usr/local/lib/python3
 COPY --from=build /usr/local/bin /usr/local/bin
 
 # Copy application code
-COPY --from=build /app/chatbot ./chatbot
+COPY --from=build /app/neocloud ./neocloud
 COPY --from=build /app/alembic ./alembic
 COPY --from=build /app/alembic.ini ./
 
