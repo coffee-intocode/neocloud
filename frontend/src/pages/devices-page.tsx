@@ -58,7 +58,7 @@ export function DevicesPage() {
       <PageHeader
         eyebrow="Supply"
         title="Devices"
-        description="Operate the hardware you can monetize. Map live Brokkr devices to commercial instances directly from this table."
+        description="Operate the hardware you can monetize. When Brokkr devices are empty, this view falls back to marketplace inventory for demo purposes."
       />
 
       <Card>

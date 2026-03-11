@@ -73,7 +73,7 @@ deploy:
 	fi
 
 start: build
-	uv run uvicorn api.app:app --reload --host 0.0.0.0 --port 8081
+	uv run python -m uvicorn api.app:app --reload --host 0.0.0.0 --port 8081
 
 dev:
-	uv run uvicorn api.app:app --reload --host 0.0.0.0 --port 8081
+	uv run python -m uvicorn api.app:app --reload --host 0.0.0.0 --port 8081

@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..auth.schemas import AuthenticatedUser
 from ..brokkr import BrokkrApiError, BrokkrClient
+from .device_source import inventory_items_to_mock_devices
 from .models import InstanceRevenueSnapshotModel, OperatorInstanceModel
 from .repository import OperatorInstanceRepository
 from .schemas import (
@@ -61,6 +62,7 @@ class OperatorState:
     reservations: list[dict[str, Any]]
     instances: list[OperatorInstanceModel]
     contacts_by_datacenter_id: dict[str, list[dict[str, Any]]]
+    devices_are_mocked: bool = False
 
 
 @dataclass(slots=True)
@@ -455,10 +457,10 @@ class OperatorService:
         zones_task = self._brokkr.list_all_paginated('/zones')
         bridge_requests_task = self._brokkr.list_all_paginated('/bridge-requests')
         bridges_task = self._brokkr.list_all_paginated('/bridges')
-        devices_task = self._brokkr.list_all_paginated('/devices')
+        devices_task = self._load_devices()
         instances_task = self._repo.list_instances()
 
-        datacenters, zones, bridge_requests, bridges, devices, instances = await asyncio.gather(
+        datacenters, zones, bridge_requests, bridges, devices_result, instances = await asyncio.gather(
             datacenters_task,
             zones_task,
             bridge_requests_task,
@@ -466,9 +468,10 @@ class OperatorService:
             devices_task,
             instances_task,
         )
+        devices, devices_are_mocked = devices_result
 
         contacts_by_datacenter_id = await self._load_contacts(datacenters)
-        reservations = await self._load_reservations(devices)
+        reservations = [] if devices_are_mocked else await self._load_reservations(devices)
 
         return OperatorState(
             datacenters=datacenters,
@@ -479,7 +482,16 @@ class OperatorService:
             reservations=reservations,
             instances=list(instances),
             contacts_by_datacenter_id=contacts_by_datacenter_id,
+            devices_are_mocked=devices_are_mocked,
         )
+
+    async def _load_devices(self) -> tuple[list[dict[str, Any]], bool]:
+        devices = await self._brokkr.list_all_paginated('/devices')
+        if devices:
+            return devices, False
+
+        inventory_items, _price_map = await self._brokkr.list_all_inventory()
+        return inventory_items_to_mock_devices(inventory_items), True
 
     async def _load_contacts(self, datacenters: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
         if not datacenters:
@@ -521,7 +533,7 @@ class OperatorService:
         return list(unique.values())
 
     async def _find_device(self, brokkr_device_id: str) -> dict[str, Any]:
-        devices = await self._brokkr.list_all_paginated('/devices', params={'search': brokkr_device_id})
+        devices, _devices_are_mocked = await self._load_devices()
         for device in devices:
             if str(device.get('id')) == brokkr_device_id:
                 return device
@@ -570,9 +582,9 @@ class OperatorService:
 
         online = _device_is_online(device)
         listed = _device_listing_active(device) and instance.is_visible and instance.market_status in ACTIVE_MARKET_STATUSES
-        bridge_ready = any(
-            str(_get_nested(bridge, 'datacenter', 'id')) == (_device_datacenter_id(device) or instance.brokkr_datacenter_id)
-            for bridge in state.bridges
+        target_datacenter_id = _device_datacenter_id(device) or instance.brokkr_datacenter_id
+        bridge_ready = target_datacenter_id is None or any(
+            str(_get_nested(bridge, 'datacenter', 'id')) == target_datacenter_id for bridge in state.bridges
         )
 
         attention_reason: str | None = None
