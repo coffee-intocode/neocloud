@@ -1,0 +1,26 @@
+[project]
+name = "neocloud-agent"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.118.0",
+    "pydantic-ai-slim[anthropic,google,openai]>=1.22.0",
+    "pydantic-settings>=2.6.0",
+    "python-dotenv>=1.0.0",
+    "starlette>=0.48.0",
+    "uvicorn>=0.37.0",
+    "watchfiles>=1.1.0",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.5",
+]
+
+[tool.setuptools.packages.find]
+include = ["chatbot*"]
+exclude = ["testing*"]
+
+[tool.ruff.format]
+docstring-code-format = false
+quote-style = "single"
