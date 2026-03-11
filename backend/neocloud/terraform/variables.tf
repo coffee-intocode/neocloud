@@ -6,7 +6,7 @@ variable "staging_cors_origins" {
     "http://localhost:5173",
     "https://shawn-exp-frontend-config.d1helczvbtzd13.amplifyapp.com",
     "https://stage.intersectionlabs.net",
-    "https://main.d1f4evjn6knc79.amplifyapp.com"
+    "https://main.dltsu3dn8stfg.amplifyapp.com"
   ]
 }
 
