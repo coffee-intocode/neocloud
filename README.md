@@ -10,6 +10,10 @@ The product is intentionally framed from the supply side, not the renter side:
 - identify what is blocking monetization
 - map physical Brokkr resources to sellable commercial instances
 
+![Dashboard](docs/readme/dashboard.png)
+![Devices](docs/readme/devices.png)
+![Device Details](docs/readme/device-details.png)
+
 ## Why This Exists
 
 - `Dashboard` focuses on revenue, idle opportunity, and operational attention

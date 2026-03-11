@@ -1,0 +1,23 @@
+services:
+  api:
+    build:
+      context: .
+    container_name: digital-cofounder-api
+    env_file:
+      - .env
+    environment:
+      PORT: 8080
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+  postgres:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_PASSWORD: password
+    network_mode: host
+    volumes:
+      - postgres:/var/lib/postgresql/data
+
+volumes:
+  postgres:
