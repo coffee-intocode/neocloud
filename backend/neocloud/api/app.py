@@ -14,7 +14,9 @@ from starlette.responses import Response
 from .brokkr import ApiErrorResponse, BrokkrApiError
 from .config import get_settings
 from .database import async_engine
+from .operator.service import OperatorServiceError
 from .routers import ai_chat_router, auth_router, brokkr_router
+from .routers import operator_router
 
 load_dotenv()
 
@@ -27,7 +29,7 @@ def _configure_logging() -> None:
         format='%(asctime)s %(levelname)s %(name)s %(message)s',
         force=True,
     )
-    logging.getLogger('chatbot').setLevel(logging.INFO)
+    logging.getLogger('api').setLevel(logging.INFO)
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
@@ -73,9 +75,15 @@ def create_app() -> FastAPI:
     app.include_router(ai_chat_router, prefix=settings.api_v1_prefix)
     app.include_router(auth_router, prefix=settings.api_v1_prefix)
     app.include_router(brokkr_router, prefix=settings.api_v1_prefix)
+    app.include_router(operator_router, prefix=settings.api_v1_prefix)
 
     @app.exception_handler(BrokkrApiError)
     async def handle_brokkr_api_error(_request: Request, exc: BrokkrApiError) -> JSONResponse:
+        payload = ApiErrorResponse(code=exc.code, message=exc.message, details=exc.details)
+        return JSONResponse(status_code=exc.status_code, content=payload.model_dump(by_alias=True))
+
+    @app.exception_handler(OperatorServiceError)
+    async def handle_operator_service_error(_request: Request, exc: OperatorServiceError) -> JSONResponse:
         payload = ApiErrorResponse(code=exc.code, message=exc.message, details=exc.details)
         return JSONResponse(status_code=exc.status_code, content=payload.model_dump(by_alias=True))
 

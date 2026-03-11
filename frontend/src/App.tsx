@@ -1,17 +1,18 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link, Outlet } from 'react-router-dom'
 
-import { getOverview } from '@/brokkr/api'
+import { getOperatorDashboard } from '@/operator/api'
 import { AppSidebar } from '@/components/app-sidebar'
-import { ModeToggle } from '@/components/mode-toggle'
+import { StatusBadge } from '@/components/status-badge'
+import { UserMenu } from '@/components/user-menu'
 import { Button } from '@/components/ui/button'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
 import { Skeleton } from '@/components/ui/skeleton'
 
 export default function App() {
   const overviewQuery = useQuery({
-    queryKey: ['brokkr', 'overview'],
-    queryFn: getOverview,
+    queryKey: ['operator', 'dashboard'],
+    queryFn: getOperatorDashboard,
   })
 
   if (overviewQuery.isLoading) {
@@ -36,7 +37,7 @@ export default function App() {
       <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top_left,_color-mix(in_oklab,var(--primary)_18%,transparent),transparent_22%),linear-gradient(180deg,color-mix(in_oklab,var(--background)_92%,#181526_8%),var(--background))] p-6">
         <div className="w-full max-w-xl rounded-3xl border border-destructive/30 bg-card p-8 shadow-xl">
           <p className="text-sm font-semibold uppercase tracking-[0.3em] text-primary">Connection issue</p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight">Unable to reach the Brokkr control plane</h1>
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight">Unable to reach the operator control plane</h1>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">{message}</p>
           <div className="mt-6 flex items-center gap-3">
             <Button
@@ -49,7 +50,7 @@ export default function App() {
               Retry
             </Button>
             <Button asChild variant="outline">
-              <Link to="/inventory">Go to inventory route</Link>
+              <Link to="/devices">Go to devices route</Link>
             </Button>
           </div>
         </div>
@@ -60,16 +61,13 @@ export default function App() {
   return (
     <SidebarProvider defaultOpen>
       <div className="flex min-h-screen w-full bg-[radial-gradient(circle_at_top_left,_color-mix(in_oklab,var(--primary)_18%,transparent),transparent_22%),linear-gradient(180deg,color-mix(in_oklab,var(--background)_92%,#181526_8%),var(--background))]">
-        <AppSidebar overview={overviewQuery.data} />
+        <AppSidebar />
         <SidebarInset className="min-h-screen bg-transparent">
           <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-border/60 bg-background/85 px-4 backdrop-blur md:px-6">
             <SidebarTrigger />
-            <div className="min-w-0">
-              <p className="text-sm font-semibold">Neocloud</p>
-              <p className="truncate text-xs text-muted-foreground">Read-only Brokkr control plane</p>
-            </div>
-            <div className="ml-auto">
-              <ModeToggle />
+            <div className="ml-auto flex items-center gap-3">
+              {overviewQuery.data.demoMode ? <StatusBadge value="Demo" /> : null}
+              <UserMenu />
             </div>
           </header>
 

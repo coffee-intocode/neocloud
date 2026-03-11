@@ -68,18 +68,32 @@ export function titleCase(value: string | null | undefined) {
     .join(' ')
 }
 
+export function formatPercent(value: number | null | undefined) {
+  if (value == null) {
+    return 'Unavailable'
+  }
+
+  return `${value.toFixed(value >= 10 ? 0 : 1)}%`
+}
+
 export function getInitials(value: string | null | undefined) {
   if (!value) {
     return 'NC'
   }
 
-  const parts = value
-    .split(/[\s@._-]+/)
+  const normalizedValue = value.includes('@') ? value.split('@')[0] : value
+  const parts = normalizedValue
+    .replace(/\d+/g, ' ')
+    .split(/[\s._-]+/)
     .filter(Boolean)
     .slice(0, 2)
 
   if (parts.length === 0) {
     return 'NC'
+  }
+
+  if (parts.length === 1 && parts[0].length >= 2) {
+    return parts[0].slice(0, 2).toUpperCase()
   }
 
   return parts.map((part) => part.charAt(0).toUpperCase()).join('')

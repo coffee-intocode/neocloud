@@ -1,11 +1,10 @@
-import { CpuIcon, LayoutDashboardIcon, LogOutIcon, ServerIcon } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { Building2Icon, LayoutDashboardIcon, NetworkIcon, Package2Icon, ServerCogIcon, TicketIcon } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
 import type { ComponentProps } from 'react'
 
-import type { OverviewResponse } from '@/brokkr/types'
-import { useAuth } from '@/context/AuthContext'
+import { getActiveOrganization } from '@/brokkr/api'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Button } from '@/components/ui/button'
 import {
   Sidebar,
   SidebarContent,
@@ -19,23 +18,29 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from '@/components/ui/sidebar'
-import { getInitials } from '@/lib/formatters'
+import { getInitials, titleCase } from '@/lib/formatters'
 
 const navigation = [
-  { title: 'Overview', url: '/', icon: LayoutDashboardIcon, end: true },
-  { title: 'Inventory', url: '/inventory', icon: CpuIcon },
-  { title: 'Deployments', url: '/deployments', icon: ServerIcon },
+  { title: 'Dashboard', url: '/', icon: LayoutDashboardIcon, end: true },
+  { title: 'Datacenters', url: '/datacenters', icon: Building2Icon },
+  { title: 'Network', url: '/network', icon: NetworkIcon },
+  { title: 'Devices', url: '/devices', icon: ServerCogIcon },
+  { title: 'Instances', url: '/instances', icon: Package2Icon },
+  { title: 'Reservations', url: '/reservations', icon: TicketIcon },
 ]
 
-export function AppSidebar({
-  overview,
-  ...props
-}: ComponentProps<typeof Sidebar> & {
-  overview: OverviewResponse
-}) {
+export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
   const location = useLocation()
-  const { signOut } = useAuth()
-  const userLabel = overview.user?.name ?? overview.user?.email ?? 'Connected account'
+  const organizationQuery = useQuery({
+    queryKey: ['brokkr', 'organization'],
+    queryFn: getActiveOrganization,
+  })
+
+  const organizationName = organizationQuery.data?.name ?? 'Brokkr organization'
+  const organizationSubtitle =
+    organizationQuery.data?.tenantType != null
+      ? titleCase(organizationQuery.data.tenantType)
+      : (organizationQuery.data?.country ?? 'Operator context')
 
   return (
     <Sidebar collapsible="icon" variant="sidebar" {...props}>
@@ -43,32 +48,19 @@ export function AppSidebar({
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
+              asChild
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                <span className="text-lg font-black tracking-tight">N</span>
-              </div>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold">Neocloud</span>
-                <span className="truncate text-xs text-sidebar-foreground/70">Read-only Brokkr control plane</span>
-              </div>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem className="group-data-[collapsible=icon]:hidden">
-            <SidebarMenuButton size="lg">
-              <Avatar className="size-8 rounded-lg border border-sidebar-border/70">
-                <AvatarImage src={overview.organization.logoUrl ?? undefined} alt={overview.organization.name} />
-                <AvatarFallback className="rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                  {getInitials(overview.organization.name)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{overview.organization.name}</span>
-                <span className="truncate text-xs text-sidebar-foreground/70">
-                  {overview.organization.tenantType ?? 'Organization'}
-                </span>
-              </div>
+              <Link to="/">
+                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                  <span className="text-lg font-black tracking-tight">N</span>
+                </div>
+                <div className="grid flex-1 text-left text-sm leading-tight">
+                  <span className="truncate font-semibold">Neocloud</span>
+                  <span className="truncate text-xs text-sidebar-foreground/70">Operator console</span>
+                </div>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -96,59 +88,23 @@ export function AppSidebar({
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-
-        <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-          <SidebarGroupLabel>Context</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton>
-                  <span className="truncate">Deployments</span>
-                  <span className="ml-auto text-xs text-sidebar-foreground/70">{overview.deploymentCount}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton>
-                  <span className="truncate">Regions</span>
-                  <span className="ml-auto text-xs text-sidebar-foreground/70">{overview.inventoryRegionCount}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter>
+      <SidebarFooter className="group-data-[collapsible=icon]:hidden">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" tooltip={userLabel}>
+            <SidebarMenuButton size="lg" tooltip={organizationName}>
               <Avatar className="size-8 rounded-lg border border-sidebar-border/70">
-                <AvatarImage src={overview.user?.avatarUrl ?? undefined} alt={userLabel} />
+                <AvatarImage src={organizationQuery.data?.logoUrl ?? undefined} alt={organizationName} />
                 <AvatarFallback className="rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                  {getInitials(userLabel)}
+                  {getInitials(organizationName)}
                 </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{userLabel}</span>
-                <span className="truncate text-xs text-sidebar-foreground/70">
-                  {overview.user?.membershipRole ?? overview.user?.role ?? 'API session'}
-                </span>
+                <span className="truncate font-medium">{organizationName}</span>
+                <span className="truncate text-xs text-sidebar-foreground/70">{organizationSubtitle}</span>
               </div>
             </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <Button
-              variant="ghost"
-              className="w-full justify-start gap-2"
-              onClick={() => {
-                signOut().catch((error: unknown) => {
-                  console.error('Failed to sign out', error)
-                })
-              }}
-            >
-              <LogOutIcon className="size-4" />
-              <span>Sign out</span>
-            </Button>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>

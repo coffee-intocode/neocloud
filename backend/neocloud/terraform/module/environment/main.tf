@@ -50,7 +50,9 @@ module "service" {
 
   # This is where we add env variables for the service
   config = {
-    CORS_ORIGINS = jsonencode(var.cors_origins)
+    CORS_ORIGINS           = jsonencode(var.cors_origins)
+    BROKKR_BASE_URL        = "https://brokkr.hydrahost.com/api/v1"
+    BROKKR_TIMEOUT_SECONDS = "15"
   }
 
   secrets = [
@@ -58,7 +60,9 @@ module "service" {
     "OPENAI_API_KEY",
     "GOOGLE_API_KEY",
     "SUPABASE_URL",
-    "SUPABASE_DATABASE_URL"
+    "SUPABASE_DATABASE_URL",
+    "ALEMBIC_DB_URL",
+    "BROKKR_API_KEY"
   ]
 }
 
