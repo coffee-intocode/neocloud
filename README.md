@@ -63,11 +63,35 @@ That local commercial model exists because Brokkr exposes infrastructure resourc
 - Alembic
 - Supabase-backed Postgres
 - Brokkr integration adapter
+- AWS infrastructure defined in `backend/neocloud/terraform`
 
 ### Local tables added for the operator product
 
 - `operator_instances`
 - `instance_revenue_snapshots`
+
+## Deployment Architecture
+
+The backend infrastructure is defined in `backend/neocloud/terraform`.
+
+Terraform is the source of truth for the AWS setup:
+
+- network and environment wiring
+- ECS cluster and service
+- task configuration, logs, and secrets
+
+## How We Deploy
+
+We build the backend image, push it to ECR as `neocloud`, and then roll the ECS service.
+
+Deployment commands live in `backend/neocloud`:
+
+```bash
+cd backend/neocloud
+make build-image
+make build-image-push
+make deploy
+```
 
 ## Brokkr Endpoints Used
 
