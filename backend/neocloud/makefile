@@ -20,6 +20,8 @@ AWS_ECR_DOMAIN := $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_DEFAULT_REGION).amazonaws.com
 GIT_SHA := $(shell git rev-parse HEAD 2>/dev/null || echo local)
 BUILD_IMAGE := $(AWS_ECR_DOMAIN)/neocloud
 BUILD_TAG := $(if $(BUILD_TAG),$(BUILD_TAG),latest)
+DOCKERIZE_HOST := $(shell echo $(ALEMBIC_DB_URL) | cut -d "@" -f 2 | cut -d ":" -f 1)
+DOCKERIZE_URL := tcp://$(if $(DOCKERIZE_HOST),$(DOCKERIZE_HOST):5432,localhost:5432)
 
 .DEFAULT_GOAL := build
 
@@ -66,6 +68,7 @@ build-image-pull: build-image-login
 build-image-migrate:
 	@echo "Running migrations in Docker container..."
 	@echo "Note: ALEMBIC_DB_URL must be set in your environment"
+	@echo "Waiting for database at $(DOCKERIZE_URL)"
 	@if [ -z "$(ALEMBIC_DB_URL)" ]; then \
 		echo "ERROR: ALEMBIC_DB_URL is not set"; \
 		exit 1; \
