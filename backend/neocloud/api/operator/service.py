@@ -43,6 +43,7 @@ from .schemas import (
 ACTIVE_MARKET_STATUSES = {'listed', 'active'}
 ONLINE_STATUS_VALUES = {'active', 'online', 'running', 'available'}
 OFFLINE_STATUS_VALUES = {'offline', 'decommissioned', 'deprecated', 'failed'}
+FORCE_OPERATOR_DEMO_MODE = True
 
 
 @dataclass(slots=True)
@@ -439,6 +440,11 @@ class OperatorService:
 
     async def _load_state(self) -> OperatorState:
         instances = list(await self._repo.list_instances())
+
+        if FORCE_OPERATOR_DEMO_MODE:
+            demo_state = await self._build_demo_state(instances)
+            if demo_state is not None:
+                return demo_state
 
         if await self._should_use_demo_mode():
             demo_state = await self._build_demo_state(instances)
