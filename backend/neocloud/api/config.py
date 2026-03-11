@@ -21,6 +21,12 @@ class Settings(BaseSettings):
     debug: bool = True
     api_v1_prefix: str = '/api/v1'
     cors_origins: list[str] = ['*']
+    supabase_url: str | None = None
+    supabase_database_url: str | None = None
+    alembic_db_url: str | None = None
+    brokkr_api_key: str | None = None
+    brokkr_base_url: str = 'https://brokkr.hydrahost.com/api/v1'
+    brokkr_timeout_seconds: float = 15.0
     anthropic_api_key: str | None = None
     openai_api_key: str | None = None
     google_api_key: str | None = None

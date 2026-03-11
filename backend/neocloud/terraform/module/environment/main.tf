@@ -56,7 +56,9 @@ module "service" {
   secrets = [
     "ANTHROPIC_API_KEY",
     "OPENAI_API_KEY",
-    "GOOGLE_API_KEY"
+    "GOOGLE_API_KEY",
+    "SUPABASE_URL",
+    "SUPABASE_DATABASE_URL"
   ]
 }
 
