@@ -40,6 +40,8 @@ module "cluster" {
 module "service" {
   source = "../service"
 
+  depends_on = [module.cluster]
+
   capacity_provider = "spot"
   cluster_id        = module.cluster.cluster_arn
   cluster_name      = local.resource_name
