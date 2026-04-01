@@ -40,6 +40,7 @@ module "acm" {
 module "staging" {
   source = "./module/environment"
 
+  app_name              = var.app_name
   name                  = "staging"
   subdomain             = local.custom_domain_enabled ? local.staging_subdomain : ""
   domain_name           = local.domain_name

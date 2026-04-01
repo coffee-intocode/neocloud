@@ -1,3 +1,8 @@
+variable "app_name" {
+  description = "Application name for resource namespacing"
+  type        = string
+}
+
 variable "name" {
   description = "Name of the cloud environment"
   type        = string
