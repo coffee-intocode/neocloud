@@ -47,7 +47,7 @@ module "service" {
   cluster_name      = local.resource_name
   image_registry    = "${data.aws_caller_identity.this.account_id}.dkr.ecr.${data.aws_region.this.name}.amazonaws.com"
   image_repository  = "neocloud"
-  image_tag         = local.resource_name
+  image_tag         = var.name
   listener_arn      = module.cluster.listener_arn
   name              = "service"
   paths             = ["/*"]
