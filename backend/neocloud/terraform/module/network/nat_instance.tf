@@ -55,9 +55,9 @@ resource "aws_instance" "nat" {
 }
 
 resource "aws_route" "private_nat_instance" {
-  for_each = toset(module.vpc.private_route_table_ids)
+  count = length(module.vpc.private_route_table_ids)
 
   destination_cidr_block = "0.0.0.0/0"
   network_interface_id   = aws_instance.nat.primary_network_interface_id
-  route_table_id         = each.value
+  route_table_id         = module.vpc.private_route_table_ids[count.index]
 }

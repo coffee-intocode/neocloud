@@ -1,3 +1,9 @@
+variable "app_name" {
+  description = "Application name used to namespace all AWS resources"
+  type        = string
+  default     = "neocloud"
+}
+
 variable "staging_cors_origins" {
   description = "CORS origins for staging environment"
   type        = list(string)

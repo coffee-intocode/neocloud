@@ -1,9 +1,13 @@
+locals {
+  resource_name = "${var.app_name}-${var.name}"
+}
+
 module "network" {
   source = "../network"
 
   availability_zones = ["us-east-2a", "us-east-2b", "us-east-2c"]
   cidr               = "10.0.0.0/16"
-  name               = var.name
+  name               = local.resource_name
   nat_instance_type  = var.nat_instance_type
 }
 
@@ -12,7 +16,7 @@ module "cluster" {
 
   security_groups     = [module.network.private_security_group]
   subnets             = module.network.private_subnets
-  name                = var.name
+  name                = local.resource_name
   vpc_id              = module.network.vpc_id
   min_size            = var.cluster_min_size
   desired_size        = var.cluster_desired_size
@@ -36,12 +40,14 @@ module "cluster" {
 module "service" {
   source = "../service"
 
+  depends_on = [module.cluster]
+
   capacity_provider = "spot"
   cluster_id        = module.cluster.cluster_arn
-  cluster_name      = var.name
+  cluster_name      = local.resource_name
   image_registry    = "${data.aws_caller_identity.this.account_id}.dkr.ecr.${data.aws_region.this.name}.amazonaws.com"
   image_repository  = "neocloud"
-  image_tag         = var.name
+  image_tag         = local.resource_name
   listener_arn      = module.cluster.listener_arn
   name              = "service"
   paths             = ["/*"]
